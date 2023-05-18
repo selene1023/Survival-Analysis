@@ -1,0 +1,44 @@
+---
+output:
+  html_document: default
+  pdf_document: default
+---
+```{r}
+library(survival)
+
+time = c(35, 34, 32, 32, 25, 23, 22, 20, 19, 17, 16, 13, 11, 10, 10, 9, 7, 6, 6, 6, 6,
+      23, 22, 17, 15, 12, 12, 11, 11, 8, 8, 8, 8, 5, 5, 4, 4, 3, 2, 2, 1, 1)
+
+status = c(0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 1, 0, 1, 0, rep(1, 24))
+
+sex = c(rep(1,8), 0, 0, 1, rep(0, 8), 1, 0, 1, rep(0, 10), 1, 1, 0, rep(1, 7))
+
+logWBC = c(1.45, 1.47, 2.20, 2.53, 1.78, 2.57, 2.32, 2.01, 2.05, 2.16, 3.60, 2.88, 2.60,
+           2.70, 2.96, 2.80, 4.43, 3.20, 2.31, 4.06, 3.28, 1.97, 2.73, 2.95, 2.30, 1.50,
+           3.06, 3.49, 2.12, 3.52, 3.05, 2.32, 3.26, 3.49, 3.97, 4.36, 2.42, 4.01, 4.91,
+           4.48, 2.80, 5.00)
+
+group = c(rep(0, 21), rep(1, 21))
+
+remission <- data.frame(survt = time, status = status, Sex = sex, logWBC = logWBC, Rx = group)
+
+remission
+
+t.surv <- Surv(remission$survt,remission$status)
+head(remission)
+m1 <- coxph(t.surv ~ Rx + Sex + logWBC + Rx*Sex + Rx*logWBC, data = remission); summary(m1)
+lik1 <- m1$loglik; lik1
+
+
+m2 <- coxph(t.surv ~ Rx + Sex + logWBC + Rx*Sex, data = remission); summary(m2)
+lik2 <- m2$loglik; lik2
+
+m3 <- coxph(t.surv ~ Rx + Sex + Rx*Sex, data = remission); summary(m3)
+lik3 <- m3$loglik; lik3
+
+m4 <- coxph(t.surv ~ Rx + Sex + logWBC, data = remission); summary(m4)
+lik4 <- m4$loglik; lik4
+
+1-pchisq(-2*(lik4[2] - lik1[2]), 2)
+```
+

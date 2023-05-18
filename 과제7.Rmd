@@ -1,0 +1,66 @@
+---
+title: "hw7"
+author: "문서현"
+date: '2022-05-30'
+output:
+  html_document: default
+  word_document: default
+---
+```{r}
+library(survival)
+
+id<-c(1:42)
+time1<-c(35,34,32,32,25,23,22,20,19,17,16,13,11,10,10,9,7,6,6,6,6)
+status1<-c(0,0,0,0,0,1,1,0,0,0,1,1,0,0,1,0,1,0,1,1,1)
+
+time2<-c(23,22,17,15,12,12,11,11,8,8,8,8,5,5,4,4,3,2,2,1,1)
+status2<-rep(1,21)
+
+sex<-c(1,1,1,1,1,1,1,1,0,0,1,0,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,1,1,0,1,1,1,1,1,1,1)
+
+logWBC<-c(1.45,1.47,2.20,2.53,1.78,2.57,2.32,2.01,2.05,2.16,3.60,2.88,2.60,2.70,2.96,2.80,4.43,3.20,2.31,4.06,3.28,1.97,2.73,2.95,2.30,1.50,3.06,3.49,2.12,3.52,3.05,2.32,3.26,3.49,3.97,4.36,2.42,4.01,4.91,4.48,2.80,5.00)
+
+remission<-data.frame(id=id,Surv=c(time1,time2),Relapse=c(status1,status2),Sex=sex,lWBC=logWBC,Group=c(rep(0,21),rep(1,21)))
+
+attach(remission)
+
+head(remission)
+```
+
+```{r}
+#1-a
+remission.cp15<-survSplit(remission,cut=15,end="Surv",event="Relapse",start="start")
+remission.cp15[1:10,]
+
+remission.cp15$hv1<-remission.cp15$Sex*(remission.cp15$start<15)
+remission.cp15$hv2<-remission.cp15$Sex*(remission.cp15$start>=15)
+remission.cp15[1:10,]
+
+Y15<-Surv(remission.cp15$start,remission.cp15$Surv,remission.cp15$Relapse)
+coxph(Y15~Group+lWBC+hv1+hv2+cluster(id),data=remission.cp15)
+
+
+```
+t>= 15일때 hazarad ratio는 1.2230이며 t< 15 일때 1.3954이다.
+```{r}
+#1-b
+coxph(Y15~Group+lWBC+Sex+hv2+cluster(id),data=remission.cp15)
+exp(0.3332-0.1319)
+
+```
+t>= 15일때 hazarad ratio는 1.2230이며 t< 15 일때 1.3954이다.
+
+a와 b 모두 같은 Hazard ratio를 갖는다
+
+2반
+```{r}
+remission.cp<-survSplit(remission,cut=Surv[Relapse==1],end="Surv",event="Relapse",start="start")
+remission.cp[1:20,]
+
+remission.cp$tSex=remission.cp$Sex*remission.cp$Surv
+coxph(Surv(remission.cp$start, remission.cp$Surv, remission.cp$Relapse)~Group+lWBC+Sex+tSex+cluster(id), data=remission.cp)
+ 
+```
+$$h(t,X(t))=h_{0}(t)exp(\beta_{1}*Group+\beta_{2}*lWBC+\beta_{3}*Sex+\delta*Sex*t)$$
+$$\hat{HR}=exp(1.72772 - 0.16553t)$$
+시간이 지남에 따라 Hazard Ratio는 감소한다.

@@ -1,0 +1,50 @@
+---
+title: "hw5"
+author: "문서현"
+date: '2022-05-15'
+output: html_document
+---
+
+```{r}
+library(survival)
+vets <- read.table("C:/Users/sandy/Desktop/vets.txt",header = TRUE)
+head(vets)
+attach(vets)
+t.surv<-Surv(time,status)
+cox.fit<-coxph(t.surv~Trt+CT2+CT3+CT4+PS+DD+age+PT,data=vets)
+cox.zph(cox.fit, transform='rank', global=FALSE)
+
+```
+```{r}
+PSbin<-rep(0,length(PS));PSbin[PS>60]<-1
+z.star<-rep(0,length(PSbin))
+
+z.star[PSbin==0&CT3==0]<-1
+z.star[PSbin==0&CT3==1]<-2
+z.star[PSbin==1&CT3==0]<-3
+z.star[PSbin==1&CT3==1]<-4
+
+table(z.star)
+
+vets$z.star.f<-factor(z.star)
+
+head(vets)
+
+
+#2번, 3번
+cox.fit2<-coxph(t.surv~Trt+PT+DD+age+strata(z.star.f),data=vets)      #No-interaction model
+cox.fit3<-coxph(t.surv~(Trt+PT+DD+age)*strata(z.star.f),data=vets)        #Interaction model
+cox.fit2; cox.fit3
+
+anova(cox.fit2,cox.fit3)
+
+like2<-cox.fit2$loglik
+like3<-cox.fit3$loglik
+#4번 -위의 결과를 이용해서 LR TEST 구한다.
+#LR=(-2*-343.13)-(-2*-334.34)=17.58
+T <- -2*(like2- like3)
+p <- 1 -pchisq(T,12)
+p
+#0.129로 0.05보다 작으므로 기각하지 않는다
+```
+

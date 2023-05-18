@@ -1,0 +1,24 @@
+---
+title: "hw"
+author: "문서현"
+date: '2022-04-11'
+output: html_document
+---
+```{r}
+library(survival)
+vets <- read.table("C:/Users/sandy/Desktop/vets.txt",header = TRUE)
+
+
+
+```
+```{r}
+attach(vets)
+t.surv<-Surv(time,status)
+m1<-coxph(t.surv~Trt+CT2+CT3+CT4+PS+DD+age+PT, method="breslow")
+summary(m1)
+```
+
+```{r}
+plot(survfit(m1,newdata=c(Trt=2,CT2=0,CT3=0,CT4=1,PS=mean(PS),DD=mean(DD),age=mean(age),PT=mean(PT))))
+```
+

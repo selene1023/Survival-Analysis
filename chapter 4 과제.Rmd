@@ -1,0 +1,58 @@
+---
+title: "Untitled"
+author: "문서현"
+date: '2022-04-25'
+output: html_document
+---
+
+```{r}
+library(survival)
+setwd("C:/Users/sandy/Desktop/")
+vets <- read.table("vets.txt", header=T)
+head(vets)
+attach(vets)
+
+t.surv<-Surv(time, status)
+m1<-coxph(t.surv ~ Trt + CT1 + CT2 + CT3 + PS + DD + age + PT, data=vets)
+summary(m1)
+
+# stratifying PS variable
+c.PS <- rep("high", length(vets$PS))
+for(i in 1:length(vets$PS)){if(vets$PS[i]<=50) c.PS[i] <- "low"}
+
+# obtaining a single KM fit and checking each group
+t.survfit <- survfit(t.surv~c.PS)
+t.survfit$strata
+
+# extracting & computing log-log survival probabilities
+high.km <- -log(-log(t.survfit$surv[1:82]))
+high.km.t <- t.survfit$time[1:82]
+low.km <- -log(-log(t.survfit$surv[-(1:82)]))
+low.km.t <- t.survfit$time[-(1:82)]
+
+# plotting log-log curves
+plot(high.km.t, high.km, xlab = "Time", ylab = "-log(-logS(t))", main = "log-log Survival Curves for PS via KM", ylim = c(-4,6), xlim = c(0,1000), type = "s")
+lines(low.km.t, low.km, type = "s", col=2, lty=1)
+legend("topright", c("High", "Low"), lty = c(1,1), col = c(1,2))
+
+# Observed plot
+high.surv <- Surv(time[c.PS == "high"], status[c.PS == "high"])
+low.surv <- Surv(time[c.PS == "low"], status[c.PS == "low"])
+
+high.km.fit <- survfit(high.surv ~ 1)
+low.km.fit <- survfit(low.surv ~ 1)
+
+high.km.s <- high.km.fit$surv; high.km.t <- high.km.fit$time
+low.km.s <- low.km.fit$surv; low.km.t <- low.km.fit$time
+
+
+# Expected plot (Option 2)
+cox.PS <- coxph(t.surv~PS, data = vets)
+
+h <- mean(PS[c.PS == "high"]); l <- mean(PS[c.PS == "low"])
+new.PS <- data.frame(PS = c(h, l))
+
+fit.PS <- survfit(cox.PS, newdata = new.PS)
+head(fit.PS$surv)
+```
+
